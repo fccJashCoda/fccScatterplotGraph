@@ -3,7 +3,7 @@
     // Constants
     const URL = 'http://localhost:5555/api';
     const WIDTH = 860;
-    const HEIGHT = 450;
+    const HEIGHT = 500;
     const PADDING = 60;
 
     // DOM queries
@@ -28,12 +28,9 @@
       const dataset = await fetchData();
       console.log(dataset);
 
-      const yearData = dataset.map((set) => String(set.Year));
-      const timeData = dataset.map((set) => set.Time);
-      console.log(timeData);
-      console.log('yearData', yearData);
-      console.log(d3.min(timeData), d3.max(timeData));
-      console.log(d3.min(yearData), d3.max(yearData));
+      // temp values
+      // dataset.push({ Time: '36:00' });
+      // dataset.push({ Time: '40:00' });
 
       const minYear = new Date(String(d3.min(dataset, (d) => d.Year) - 1));
       const maxYear = new Date(
@@ -45,15 +42,22 @@
 
         .range([PADDING, WIDTH - 15]);
 
-      const min = d3.min(dataset, (d) => d.Time);
-      console.log('min', min);
-      const minTime = new Date(0, 0, 0, 0, min.slice(0, 2), min.slice(3));
-      console.log(minTime);
-      const maxTime = '';
+      const specifier = '%M:%S';
+      console.log('d3 parsed time', d3.timeParse(specifier)('35:15'));
+      // console.log('d3 parsed time', d3.timeParse('%M:%S')('35:15'));
+      const timeExtent = d3
+        .extent(dataset, (d) => d.Time)
+        .map((d) => d3.timeParse(specifier)(d));
+      console.log('extent', timeExtent);
+
       const yScale = d3
-        .scaleTime()
-        .domain([d3.min(timeData), d3.max(timeData)])
-        .range([HEIGHT - PADDING, 0]);
+        .scaleUtc()
+        // .scaleTime()
+        .domain(timeExtent.reverse())
+        // .nice()
+        // .domain([minTime, maxTime])
+        // .nice()
+        .range([HEIGHT - PADDING, 10]);
 
       console.log(yScale('37:00'));
       const tooltip = d3
@@ -69,36 +73,47 @@
         .attr('width', WIDTH)
         .attr('height', HEIGHT)
         .attr('viewBox', '0 0 860 450');
-
-      // svg
-      //   .selectAll('rect')
-      //   .data(dataset)
-      //   .enter()
-      //   .append('rect')
-      //   .style('position', 'relative')
-      //   .attr('class', 'bar')
-      //   .attr('x', (d, i) => xScale(yearData[i]))
-      //   .attr('y', (d) => yScale(d.gdp))
-      //   .attr('width', WIDTH / dataset.length)
-      //   .attr('height', (d) => yScale(0) - yScale(d.gdp))
-      //   .attr('data-date', (d) => d.date)
-      //   .attr('data-gdp', (d) => d.gdp)
-      //   .on('mouseover', (d, i) => {
-      //     tooltip
-      //       .html(`${d.year} ${d.quarter} <br> $${d.gdp} Billion`)
-      //       .style('left', `${xScale(yearData[i]) + 20}px`)
-      //       .attr('data-date', d.date)
-      //       .attr('data-gdp', d.gdp)
-      //       .attr('class', 'fade-in');
-      //   })
-      //   .on('mouseout', () => {
-      //     tooltip.attr('class', 'invisible');
-      //   });
+      console.log(xScale(new Date('1999')));
+      svg
+        .selectAll('circle')
+        .data(dataset)
+        .enter()
+        .append('circle')
+        .style('position', 'relative')
+        // .attr('class', 'bar')
+        .attr('cx', (d, i) => xScale(new Date(String(d.Year))))
+        .attr('cy', (d) => {
+          console.log(yScale(d3.timeParse(specifier)(d.Time)));
+          return yScale(d3.timeParse(specifier)(d.Time));
+        })
+        .attr('r', 7)
+        .attr('fill', (d) => (d.Doping.length ? 'steelblue' : 'orange'))
+        .attr('data-date', (d) => d.date)
+        .attr('data-gdp', (d) => d.gdp)
+        .on('mouseover', (d, i) => {
+          tooltip
+            .html(`${d.Name}`)
+            .style('left', 200)
+            // .attr('data-date', d.date)
+            // .attr('data-gdp', d.gdp)
+            .attr('class', 'fade-in');
+        })
+        .on('mouseout', () => {
+          tooltip.attr('class', 'invisible');
+        });
 
       // add axis bars
       const xAxis = d3.axisBottom(xScale);
-      const yAxis = d3.axisLeft(yScale);
+      const yAxis = d3.axisLeft(yScale).ticks(10);
+      // .tickFormat((d) => {
+      //   console.log(d);
+      //   return `${d.getMinutes()}:${d.getSeconds()}`;
+      // });
 
+      console.log(d3);
+
+      console.log('37:30 on yscale', yScale(d3.timeParse(specifier)('37:30')));
+      console.log('14:30 on yscale', yScale(d3.timeParse(specifier)('39:00')));
       svg
         .append('g')
         .attr('id', 'x-axis')
