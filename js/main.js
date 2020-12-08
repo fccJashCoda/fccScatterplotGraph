@@ -26,16 +26,12 @@
     async function renderData() {
       svgContainer.innerHTML = '';
       const dataset = await fetchData();
-      console.log(dataset);
-
-      // temp values
-      // dataset.push({ Time: '36:00' });
-      // dataset.push({ Time: '40:00' });
 
       const minYear = new Date(String(d3.min(dataset, (d) => d.Year) - 1));
       const maxYear = new Date(
         String(Number(d3.max(dataset, (d) => d.Year)) + 1)
       );
+
       const xScale = d3
         .scaleTime()
         .domain([minYear, maxYear])
@@ -43,28 +39,17 @@
         .range([PADDING, WIDTH - 15]);
 
       const specifier = '%M:%S';
-      console.log('d3 parsed time', d3.timeParse(specifier)('35:15'));
-      // console.log('d3 parsed time', d3.timeParse('%M:%S')('35:15'));
       const timeExtent = d3
         .extent(dataset, (d) => d.Time)
         .map((d) => d3.timeParse(specifier)(d));
-      console.log('extent', timeExtent);
 
       const yScale = d3
         .scaleUtc()
-        // .scaleTime()
         .domain(timeExtent.reverse())
-        // .nice()
-        // .domain([minTime, maxTime])
-        // .nice()
         .range([HEIGHT - PADDING, 10]);
 
-      console.log(yScale('37:00'));
-      const tooltip = d3
-        .select('article')
-        .append('div')
-        .attr('id', 'tooltip')
-        .attr('class', 'invisible');
+      const tooltip = d3.select('article').append('div').attr('id', 'tooltip');
+      // .attr('class', 'invisible');
 
       const svg = d3
         .select('article')
@@ -73,47 +58,62 @@
         .attr('width', WIDTH)
         .attr('height', HEIGHT)
         .attr('viewBox', '0 0 860 450');
-      console.log(xScale(new Date('1999')));
+
       svg
         .selectAll('circle')
         .data(dataset)
         .enter()
         .append('circle')
         .style('position', 'relative')
-        // .attr('class', 'bar')
+        .attr('class', 'dot')
         .attr('cx', (d, i) => xScale(new Date(String(d.Year))))
-        .attr('cy', (d) => {
-          console.log(yScale(d3.timeParse(specifier)(d.Time)));
-          return yScale(d3.timeParse(specifier)(d.Time));
-        })
+        .attr('cy', (d) => yScale(d3.timeParse(specifier)(d.Time)))
         .attr('r', 7)
         .attr('fill', (d) => (d.Doping.length ? 'steelblue' : 'orange'))
-        .attr('data-date', (d) => d.date)
-        .attr('data-gdp', (d) => d.gdp)
+        .attr('data-xvalue', (d) => xScale(new Date(String(d.Year))))
+        .attr('data-yvalue', (d) => yScale(d3.timeParse(specifier)(d.Time)));
+
+      svg
+        .selectAll('.dot')
         .on('mouseover', (d, i) => {
           tooltip
             .html(`${d.Name}`)
-            .style('left', 200)
-            // .attr('data-date', d.date)
-            // .attr('data-gdp', d.gdp)
+            .style('top', `${yScale(d3.timeParse(specifier)(d.Time))}px`)
+            .style('left', `${xScale(new Date(String(d.Year)))}px`)
             .attr('class', 'fade-in');
         })
         .on('mouseout', () => {
-          tooltip.attr('class', 'invisible');
+          tooltip;
+          // .style('left', '-300px')
+          // .style('topt', '-300px')
+          // .attr('class', 'invisible');
         });
 
       // add axis bars
       const xAxis = d3.axisBottom(xScale);
-      const yAxis = d3.axisLeft(yScale).ticks(10);
-      // .tickFormat((d) => {
-      //   console.log(d);
-      //   return `${d.getMinutes()}:${d.getSeconds()}`;
-      // });
+      const yAxis = d3
+        .axisLeft(yScale)
+        .ticks()
+        .tickFormat((d) => {
+          console.log(d);
+          return `${d.getMinutes()}:${d.getSeconds()}`;
+        });
+      // .tickFormat('%M:%S');
 
-      console.log(d3);
+      // svg
+      //   .selectAll('test')
+      //   .data(dataset)
+      //   .enter()
+      //   .append('text')
+      //   .attr('x', (d) => xScale(new Date(String(d.Year))) + 10)
+      //   .attr('y', (d) => yScale(d3.timeParse(specifier)(d.Time)))
+      //   .text(
+      //     (d) =>
+      //       `${Math.ceil(xScale(new Date(String(d.Year))))}, ${Math.ceil(
+      //         yScale(d3.timeParse(specifier)(d.Time))
+      //       )}`
+      //   );
 
-      console.log('37:30 on yscale', yScale(d3.timeParse(specifier)('37:30')));
-      console.log('14:30 on yscale', yScale(d3.timeParse(specifier)('39:00')));
       svg
         .append('g')
         .attr('id', 'x-axis')
@@ -132,6 +132,13 @@
         .attr('y', 15)
         .attr('transform', `rotate(-90)`)
         .text('Time to climb');
+
+      svg
+        .append('text')
+        .attr('id', 'legend')
+        .attr('x', WIDTH - 100)
+        .attr('y', 100)
+        .html('blue = Dopping suspicion <br> orange = clean');
     }
   });
 })();

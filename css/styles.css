@@ -62,6 +62,7 @@ form {
 #tooltip {
   position: absolute;
   top: 300px;
+  left: -200px;
   width: 150px;
   height: 55px;
   background-color: var(--tooltip-bg-color);
