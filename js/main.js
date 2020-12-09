@@ -36,13 +36,14 @@
       const xScale = d3
         .scaleTime()
         .domain([minYear, maxYear])
-
         .range([PADDING, WIDTH - 15]);
 
       const specifier = '%M:%S';
       const timeExtent = d3
         .extent(dataset, (d) => d.Time)
         .map((d) => d3.timeParse(specifier)(d));
+
+      console.log('timeextent', timeExtent);
 
       const yScale = d3
         .scaleUtc()
@@ -60,9 +61,7 @@
         <br>
         Place: ${d.Place} Year: ${d.Year} Time: ${d.Time}
         
-        ${
-          d.Doping ? `<br><a href=${d.URL} target="_blank">${d.Doping}</a>` : ''
-        }
+        ${d.Doping ? `<br><br>${d.Doping}` : ''}
 
       `;
       const svg = d3
@@ -93,17 +92,12 @@
           tooltip
             .html(`${tooltipHTML(d)}`)
             .attr('data-year', `${xScale(new Date(String(d.Year)))}`)
-            // .html(`${d.Name}`)
             .style('visibility', 'visible')
             .style('top', `${yScale(d3.timeParse(specifier)(d.Time))}px`)
             .style('left', `${xScale(new Date(String(d.Year))) + 8}px`);
-          // .attr('class', 'fade-in');
         })
         .on('mouseout', () => {
           tooltip.style('visibility', 'hidden');
-          // .style('left', '-300px')
-          // .style('topt', '-300px')
-          // .attr('class', 'invisible');
         });
 
       // add axis bars
