@@ -6,8 +6,6 @@
   --main-font-color: #000;
   --tooltip-bg-color: #fff;
   --tooltip-font-color: #000;
-  --bar-color: #85bb65;
-  --bar-hover-color: gold;
   --btn-font-color: #fff;
   --axis-font-color: #fff;
   --link-color: gold;
@@ -52,12 +50,7 @@ form {
 }
 
 .dot {
-  /* fill: var(--bar-color); */
   cursor: pointer;
-}
-
-.bar:hover {
-  fill: var(--bar-hover-color);
 }
 
 #tooltip {
@@ -68,8 +61,18 @@ form {
   color: var(--tooltip-font-color);
   padding: 0.5em;
   box-shadow: 3px 3px rgba(0, 0, 0, 0.5);
+  opacity: 0.7;
+  font-weight: bold;
+  font-size: 0.7em;
+  min-width: 270px;
 }
 
+.warning {
+  display: block;
+  color: red;
+  margin: 0;
+  margin-top: 1.5em;
+}
 g {
   color: var(--axis-font-color);
 }

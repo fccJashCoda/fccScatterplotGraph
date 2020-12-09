@@ -12,76 +12,58 @@
     // Init
     renderData();
 
-    // Function Declarations
-    async function fetchData() {
-      try {
-        const response = await fetch(URL);
-        const data = await response.json();
-        return data.data;
-      } catch (err) {
-        return [];
-      }
-    }
-
     async function renderData() {
+      // Private Function Declarations
+      async function _fetchData() {
+        try {
+          const response = await fetch(URL);
+          const data = await response.json();
+          return data.data;
+        } catch (err) {
+          return [];
+        }
+      }
+      const _tooltipHTML = (d) => `
+        ${d.Name}, ${d.Nationality} 
+        <br>
+        Place: ${d.Place} Year: ${d.Year} Time: ${d.Time}
+        
+        ${d.Doping ? `<br><span class='warning'>${d.Doping}</span>` : ''}
+
+      `;
+
       svgContainer.innerHTML = '';
-      const dataset = await fetchData();
-      console.log(dataset);
+      const dataset = await _fetchData();
 
       const minYear = new Date(String(d3.min(dataset, (d) => d.Year) - 1));
       const maxYear = new Date(
         String(Number(d3.max(dataset, (d) => d.Year)) + 1)
       );
 
-      const xScale = d3
+      const x = d3
         .scaleTime()
         .domain([minYear, maxYear])
         .range([PADDING, WIDTH - 15]);
 
-      const specifier = '%M:%S';
-
       const timeData = dataset.map((d) => new Date(d.Seconds * 1000));
-      const parsedData = dataset.map((d) => d3.timeParse(specifier)(d.Time));
+      const [endTime, startTime] = d3.extent(timeData);
 
-      // const startTime = d3.max(parsedData);
-      // const endTime = d3.min(parsedData);
-      const startTime = d3.max(timeData);
-      const endTime = d3.min(timeData);
-
-      console.log('starttime', startTime);
-      console.log('endtime', endTime);
-
-      const yScale = d3
-        .scaleLinear()
-        // .scaleTime()
+      const y = d3
+        .scaleTime()
         .domain([startTime, endTime])
-        // .domain(d3.extent(parsedData).reverse())
-        // .domain(timeExtent.reverse())
         .range([HEIGHT - PADDING, 10]);
 
-      console.log('new ySCale', yScale(startTime));
-
       // add axis bars
-
       const timeFormat = d3.timeFormat('%M:%S');
-      const xAxis = d3.axisBottom(xScale);
-      const yAxis = d3.axisLeft(yScale).tickFormat(timeFormat);
+      const xAxis = d3.axisBottom(x);
+      const yAxis = d3.axisLeft(y).tickFormat(timeFormat);
 
-      console.log(d3.range(startTime, endTime, 15000));
       const tooltip = d3
         .select('article')
         .append('div')
         .attr('id', 'tooltip')
         .style('visibility', 'hidden');
 
-      const tooltipHTML = (d) => `
-        ${d.Name}, ${d.Nationality} 
-        <br>
-        Place: ${d.Place} Year: ${d.Year} Time: ${d.Time}
-        
-        ${d.Doping ? `<br><br>${d.Doping}` : ''}
-
-      `;
       const svg = d3
         .select('article')
         .append('svg')
@@ -97,26 +79,23 @@
         .append('circle')
         .style('position', 'relative')
         .attr('class', 'dot')
-        .attr('cx', (d, i) => xScale(new Date(String(d.Year))))
-        .attr('cy', (d, i) => yScale(timeData[i]))
-        // .attr('cy', (d) => yScale(d3.timeParse(specifier)(d.Time)))
+        .attr('cx', (d, i) => x(new Date(String(d.Year))))
+        .attr('cy', (d, i) => y(timeData[i]))
         .attr('r', 7)
-        .attr('fill', (d) => (d.Doping.length ? 'steelblue' : 'orange'))
+        .attr('fill', (d) => (d.Doping.length ? 'orange' : 'green'))
         .attr('data-xvalue', (d) => new Date(String(d.Year)))
-        // .attr('data-yvalue', (d) => new Date(String(d.Time)));
-        // .attr('data-yvalue', (d) => yScale(d3.timeParse(specifier)(d.Time)));
         .attr('data-yvalue', (d, i) => timeData[i]);
-      // .attr('data-yvalue', (d) => d3.timeParse(specifier)(d.Time));
+
       svg
         .selectAll('.dot')
         .on('mouseover', (d, i) => {
           tooltip
-            .html(`${tooltipHTML(d)}`)
+            .html(`${_tooltipHTML(d)}`)
             .attr('data-year', `${new Date(String(d.Year))}`)
-            // .attr('data-year', `${xScale(new Date(String(d.Year)))}`)
             .style('visibility', 'visible')
-            .style('top', `${yScale(timeData[i])}px`)
-            .style('left', `${xScale(new Date(String(d.Year))) + 8}px`);
+            .style('top', `${y(timeData[i])}px`)
+            .style('left', `${x(new Date(String(d.Year))) + 8}px`)
+            .style('background', `${d.Doping.length ? 'orange' : 'green'}`);
         })
         .on('mouseout', () => {
           tooltip.style('visibility', 'hidden');
