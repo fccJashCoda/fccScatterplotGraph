@@ -26,6 +26,7 @@
     async function renderData() {
       svgContainer.innerHTML = '';
       const dataset = await fetchData();
+      console.log(dataset);
 
       const minYear = new Date(String(d3.min(dataset, (d) => d.Year) - 1));
       const maxYear = new Date(
@@ -48,9 +49,22 @@
         .domain(timeExtent.reverse())
         .range([HEIGHT - PADDING, 10]);
 
-      const tooltip = d3.select('article').append('div').attr('id', 'tooltip');
-      // .attr('class', 'invisible');
+      const tooltip = d3
+        .select('article')
+        .append('div')
+        .attr('id', 'tooltip')
+        .style('visibility', 'hidden');
 
+      const tooltipHTML = (d) => `
+        ${d.Name}, ${d.Nationality} 
+        <br>
+        Place: ${d.Place} Year: ${d.Year} Time: ${d.Time}
+        
+        ${
+          d.Doping ? `<br><a href=${d.URL} target="_blank">${d.Doping}</a>` : ''
+        }
+
+      `;
       const svg = d3
         .select('article')
         .append('svg')
@@ -77,13 +91,16 @@
         .selectAll('.dot')
         .on('mouseover', (d, i) => {
           tooltip
-            .html(`${d.Name}`)
+            .html(`${tooltipHTML(d)}`)
+            .attr('data-year', `${xScale(new Date(String(d.Year)))}`)
+            // .html(`${d.Name}`)
+            .style('visibility', 'visible')
             .style('top', `${yScale(d3.timeParse(specifier)(d.Time))}px`)
-            .style('left', `${xScale(new Date(String(d.Year)))}px`)
-            .attr('class', 'fade-in');
+            .style('left', `${xScale(new Date(String(d.Year))) + 8}px`);
+          // .attr('class', 'fade-in');
         })
         .on('mouseout', () => {
-          tooltip;
+          tooltip.style('visibility', 'hidden');
           // .style('left', '-300px')
           // .style('topt', '-300px')
           // .attr('class', 'invisible');
@@ -138,7 +155,7 @@
         .attr('id', 'legend')
         .attr('x', WIDTH - 100)
         .attr('y', 100)
-        .html('blue = Dopping suspicion <br> orange = clean');
+        .html('blue = Doping suspicion <br> orange = clean');
     }
   });
 })();
