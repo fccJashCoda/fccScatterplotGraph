@@ -38,17 +38,47 @@
         .domain([minYear, maxYear])
         .range([PADDING, WIDTH - 15]);
 
+      console.log('1990', xScale(new Date(1990)));
+
       const specifier = '%M:%S';
       const timeExtent = d3
         .extent(dataset, (d) => d.Time)
         .map((d) => d3.timeParse(specifier)(d));
 
-      console.log('timeextent', timeExtent);
+      const parsedData = dataset.map((d) => d3.timeParse(specifier)(d.Time));
+
+      const startTime = d3.max(parsedData);
+      const endTime = d3.min(parsedData);
+
+      console.log('starttime', startTime);
+      console.log('endtime', endTime);
 
       const yScale = d3
         .scaleUtc()
-        .domain(timeExtent.reverse())
+        .domain([startTime, endTime])
+        // .domain(d3.extent(parsedData).reverse())
+        // .domain(timeExtent.reverse())
         .range([HEIGHT - PADDING, 10]);
+
+      // add axis bars
+      const xAxis = d3.axisBottom(xScale);
+      const yAxis = d3
+        .axisLeft(yScale)
+        .tickValues(parsedData)
+        .tickFormat(d3.timeFormat('%M:%S'));
+      // .tickFormat((d) =>
+      //   d3.range(startTime, endTime, 15000).map((d) => {
+      //     const data = new Date(d);
+      //     console.log(data);
+      //     return data;
+      //   })
+      // );
+      // .tickFormat((d) => d3.timeFormat(specifier)(d));
+      // .tickFormat((d) => {
+      //   console.log(d);
+      //   return `${d.getMinutes()}:${d.getSeconds()}`;
+      // });
+      // .tickFormat('%M:%S');
 
       const tooltip = d3
         .select('article')
@@ -83,15 +113,15 @@
         .attr('cy', (d) => yScale(d3.timeParse(specifier)(d.Time)))
         .attr('r', 7)
         .attr('fill', (d) => (d.Doping.length ? 'steelblue' : 'orange'))
-        .attr('data-xvalue', (d) => xScale(new Date(String(d.Year))))
-        .attr('data-yvalue', (d) => yScale(d3.timeParse(specifier)(d.Time)));
-
+        .attr('data-xvalue', (d) => new Date(String(d.Year)))
+        .attr('data-yvalue', (d) => d3.timeParse(specifier)(d.Time));
       svg
         .selectAll('.dot')
         .on('mouseover', (d, i) => {
           tooltip
             .html(`${tooltipHTML(d)}`)
-            .attr('data-year', `${xScale(new Date(String(d.Year)))}`)
+            .attr('data-year', `${new Date(String(d.Year))}`)
+            // .attr('data-year', `${xScale(new Date(String(d.Year)))}`)
             .style('visibility', 'visible')
             .style('top', `${yScale(d3.timeParse(specifier)(d.Time))}px`)
             .style('left', `${xScale(new Date(String(d.Year))) + 8}px`);
@@ -100,16 +130,7 @@
           tooltip.style('visibility', 'hidden');
         });
 
-      // add axis bars
-      const xAxis = d3.axisBottom(xScale);
-      const yAxis = d3
-        .axisLeft(yScale)
-        .ticks()
-        .tickFormat((d) => {
-          console.log(d);
-          return `${d.getMinutes()}:${d.getSeconds()}`;
-        });
-      // .tickFormat('%M:%S');
+      console.log(d3);
 
       // svg
       //   .selectAll('test')
