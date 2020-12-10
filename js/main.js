@@ -23,13 +23,18 @@
           return [];
         }
       }
+
       const _tooltipHTML = (d) => `
-        ${d.Name}, ${d.Nationality} 
+      ${d.Place} - ${d.Name}, ${d.Nationality} 
         <br>
-        Place: ${d.Place} Year: ${d.Year} Time: ${d.Time}
+        Year: ${d.Year} Time: ${d.Time}
         
         ${d.Doping ? `<br><span class='warning'>${d.Doping}</span>` : ''}
 
+      `;
+
+      const _legendHTML = () => `
+        blue = Doping suspicion <br> orange = clean
       `;
 
       svgContainer.innerHTML = '';
@@ -82,7 +87,7 @@
         .attr('cx', (d, i) => x(new Date(String(d.Year))))
         .attr('cy', (d, i) => y(timeData[i]))
         .attr('r', 7)
-        .attr('fill', (d) => (d.Doping.length ? 'orange' : 'green'))
+        .attr('fill', (d) => (d.Doping.length ? 'orange' : '#0f940f'))
         .attr('data-xvalue', (d) => new Date(String(d.Year)))
         .attr('data-yvalue', (d, i) => timeData[i]);
 
@@ -95,7 +100,7 @@
             .style('visibility', 'visible')
             .style('top', `${y(timeData[i])}px`)
             .style('left', `${x(new Date(String(d.Year))) + 8}px`)
-            .style('background', `${d.Doping.length ? 'orange' : 'green'}`);
+            .style('background', `${d.Doping.length ? 'orange' : '#0f940f'}`);
         })
         .on('mouseout', () => {
           tooltip.style('visibility', 'hidden');
@@ -118,14 +123,37 @@
         .attr('x', -HEIGHT / 2 - 30)
         .attr('y', 15)
         .attr('transform', `rotate(-90)`)
-        .text('Time to climb');
+        .text('Ascent Time');
 
-      svg
-        .append('text')
+      const legend = svg
+        .append('g')
         .attr('id', 'legend')
-        .attr('x', WIDTH - 100)
-        .attr('y', 100)
-        .html('blue = Doping suspicion <br> orange = clean');
+        .attr('transform', `translate(${WIDTH - 140}, ${50})`);
+
+      legend
+        .append('rect')
+        .attr('stroke', 'white')
+        .attr('fill', 'transparent')
+        .attr('width', 140)
+        .attr('height', 50)
+        .attr('x', -20)
+        .attr('y', -20);
+      legend
+        .append('rect')
+        .attr('fill', 'orange')
+        .attr('width', 10)
+        .attr('height', 10)
+        .attr('x', -14)
+        .attr('y', -10);
+      legend
+        .append('rect')
+        .attr('fill', 'green')
+        .attr('width', 10)
+        .attr('height', 10)
+        .attr('x', -14)
+        .attr('y', 10);
+      legend.append('text').text('= Doping allegation');
+      legend.append('text').text('= Clean').attr('y', 20);
     }
   });
 })();
