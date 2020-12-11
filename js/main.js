@@ -1,13 +1,13 @@
 (() => {
   window.addEventListener('DOMContentLoaded', async () => {
-    // Constants
-    const URL = 'http://localhost:5555/api';
+    const URL =
+      'https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json';
     const WIDTH = 860;
     const HEIGHT = 500;
     const PADDING = 60;
 
-    // DOM queries
-    const svgContainer = document.getElementById('svgContainer');
+    const plotColor1 = 'orange';
+    const plotColor2 = 'steelblue';
 
     // Init
     renderData();
@@ -18,7 +18,7 @@
         try {
           const response = await fetch(URL);
           const data = await response.json();
-          return data.data;
+          return data;
         } catch (err) {
           return [];
         }
@@ -33,18 +33,14 @@
 
       `;
 
-      const _legendHTML = () => `
-        blue = Doping suspicion <br> orange = clean
-      `;
-
-      svgContainer.innerHTML = '';
+      // Populate Data
       const dataset = await _fetchData();
 
+      // Scales
       const minYear = new Date(String(d3.min(dataset, (d) => d.Year) - 1));
       const maxYear = new Date(
         String(Number(d3.max(dataset, (d) => d.Year)) + 1)
       );
-
       const x = d3
         .scaleTime()
         .domain([minYear, maxYear])
@@ -52,23 +48,24 @@
 
       const timeData = dataset.map((d) => new Date(d.Seconds * 1000));
       const [endTime, startTime] = d3.extent(timeData);
-
       const y = d3
         .scaleTime()
         .domain([startTime, endTime])
         .range([HEIGHT - PADDING, 10]);
 
-      // add axis bars
+      // Axis bars
       const timeFormat = d3.timeFormat('%M:%S');
       const xAxis = d3.axisBottom(x);
       const yAxis = d3.axisLeft(y).tickFormat(timeFormat);
 
+      // Tooltip
       const tooltip = d3
         .select('article')
         .append('div')
         .attr('id', 'tooltip')
         .style('visibility', 'hidden');
 
+      // Main SVG
       const svg = d3
         .select('article')
         .append('svg')
@@ -87,10 +84,11 @@
         .attr('cx', (d, i) => x(new Date(String(d.Year))))
         .attr('cy', (d, i) => y(timeData[i]))
         .attr('r', 7)
-        .attr('fill', (d) => (d.Doping.length ? 'orange' : '#0f940f'))
+        .attr('fill', (d) => (d.Doping ? plotColor1 : plotColor2))
         .attr('data-xvalue', (d) => new Date(String(d.Year)))
         .attr('data-yvalue', (d, i) => timeData[i]);
 
+      // Tooltip animation
       svg
         .selectAll('.dot')
         .on('mouseover', (d, i) => {
@@ -100,12 +98,13 @@
             .style('visibility', 'visible')
             .style('top', `${y(timeData[i])}px`)
             .style('left', `${x(new Date(String(d.Year))) + 8}px`)
-            .style('background', `${d.Doping.length ? 'orange' : '#0f940f'}`);
+            .style('background', `${d.Doping ? plotColor1 : plotColor2}`);
         })
         .on('mouseout', () => {
           tooltip.style('visibility', 'hidden');
         });
 
+      // Render Axiis bars
       svg
         .append('g')
         .attr('id', 'x-axis')
@@ -123,8 +122,9 @@
         .attr('x', -HEIGHT / 2 - 30)
         .attr('y', 15)
         .attr('transform', `rotate(-90)`)
-        .text('Ascent Time');
+        .text('Ascent Time in Minutes');
 
+      // Legend
       const legend = svg
         .append('g')
         .attr('id', 'legend')
@@ -140,14 +140,14 @@
         .attr('y', -20);
       legend
         .append('rect')
-        .attr('fill', 'orange')
+        .attr('fill', plotColor1)
         .attr('width', 10)
         .attr('height', 10)
         .attr('x', -14)
         .attr('y', -10);
       legend
         .append('rect')
-        .attr('fill', 'green')
+        .attr('fill', plotColor2)
         .attr('width', 10)
         .attr('height', 10)
         .attr('x', -14)
